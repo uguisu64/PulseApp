@@ -1,51 +1,78 @@
 package com.example.pulseapp
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.util.Log
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.pulseapp.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityMainBinding
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
 
-    private val BluetoothAdapter.isDisabled: Boolean
-        get() = !isEnabled
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        checkPermissions()
 
-        val navView: BottomNavigationView = binding.navView
+        initConnectDeviceSpinner()
+    }
 
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
-            )
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
+    private val REQUEST_MULTI_PERMISSIONS = 101
 
-        bluetoothAdapter?.takeIf { it.isDisabled }?.apply {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+    private fun initConnectDeviceSpinner() {
+        Log.d("bluetooth", "function called")
+        val btSpinner = findViewById<Spinner>(R.id.spinner)
+        if(ActivityCompat.checkSelfPermission(this,Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Log.d("bluetooth","permission error")
+            return
+        }
+        val pairedDevices = bluetoothAdapter?.bondedDevices
+
+        Log.d("bluetooth","bondedDeviceOk")
+
+        if(pairedDevices != null) {
+            val btDeviceAdapter = ArrayAdapter<String>(this,android.R.layout.simple_spinner_item)
+
+            if(pairedDevices.isEmpty()) {
+                btDeviceAdapter.add("CONNECT_DEVICE_NONE")
+            }
+            else {
+                pairedDevices.forEach {
+                    val deviceName = it.name
+                    btDeviceAdapter.add(deviceName)
+                }
+            }
+
+            btSpinner.adapter = btDeviceAdapter
+        }
+    }
+
+    private fun checkPermissions() {
+        val requestPermissions = mutableListOf<String>()
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN,) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions.add(Manifest.permission.BLUETOOTH_SCAN)
+        }
+
+
+        if(requestPermissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, requestPermissions.toTypedArray(), REQUEST_MULTI_PERMISSIONS)
         }
     }
 }
