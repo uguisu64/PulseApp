@@ -41,6 +41,16 @@
         app:layout_constraintTop_toBottomOf="@+id/spinner" />
 
     <Button
+        android:id="@+id/recordButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Record"
+        app:layout_constraintEnd_toStartOf="@+id/stopButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextTextFileName" />
+
+    <Button
         android:id="@+id/disConnectButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -48,5 +58,46 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/connectButton"
         app:layout_constraintTop_toTopOf="@+id/connectButton" />
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="stop"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/recordButton"
+        app:layout_constraintTop_toBottomOf="@+id/editTextTextFileName" />
+
+    <EditText
+        android:id="@+id/editTextTextFileName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Test"
+        app:layout_constraintTop_toBottomOf="@+id/textView2"
+        tools:layout_editor_absoluteX="9dp" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:text="FileName"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/connectButton" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=".csv"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/editTextTextFileName"
+        app:layout_constraintStart_toEndOf="@+id/editTextTextFileName" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

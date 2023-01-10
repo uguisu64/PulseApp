@@ -7,23 +7,25 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.Spinner
-import android.widget.TextView
+import android.os.*
+import android.util.Log
+import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.FileOutputStream
 import java.io.InputStream
+import java.time.LocalDateTime
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
     lateinit var btSocket: BluetoothSocket
     lateinit var btInputStream: InputStream
+
+    lateinit var file: String
+    var fileSaveFlg = false
 
     val handler = Handler(Looper.getMainLooper())
 
@@ -37,12 +39,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val connectButton = findViewById<Button>(R.id.connectButton)
+        val recordButton = findViewById<Button>(R.id.recordButton)
+        val stopButton = findViewById<Button>(R.id.stopButton)
 
         checkPermissions()
 
         initConnectDeviceSpinner()
 
         connectButton.setOnClickListener { connectDevice() }
+        recordButton.setOnClickListener { recording() }
+        stopButton.setOnClickListener { stopRecording() }
     }
 
     private val REQUEST_MULTI_PERMISSIONS = 101
@@ -80,6 +86,9 @@ class MainActivity : AppCompatActivity() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN,) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions.add(Manifest.permission.BLUETOOTH_SCAN)
         }
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
 
 
         if(requestPermissions.isNotEmpty()) {
@@ -115,14 +124,32 @@ class MainActivity : AppCompatActivity() {
         btReceive.start()
     }
 
+    private fun recording() {
+        val filename = findViewById<EditText>(R.id.editTextTextFileName).text
+        if(filename.isNullOrEmpty()) {
+            Toast.makeText(applicationContext, "enter file name!", Toast.LENGTH_SHORT).show()
+        }
+        else {
+            val path = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).toString()
+            file = "${path}/${filename}.csv"
+            Log.d("file", file)
+            fileSaveFlg = true
+        }
+    }
+
+    private fun stopRecording() {
+        fileSaveFlg = false
+    }
+
 
     class BtReceive(private val mainActivity: MainActivity): Thread() {
         private var isKeepRun = true
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun run() {
             isKeepRun = true
             while(isKeepRun) {
                 receiveData()
-                sleep(500)
+                sleep(300)
             }
         }
 
@@ -130,6 +157,7 @@ class MainActivity : AppCompatActivity() {
             isKeepRun = false
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         private fun receiveData() {
             var receiveData = ByteArray(256)
             val count = mainActivity.btInputStream.read(receiveData)
@@ -137,6 +165,9 @@ class MainActivity : AppCompatActivity() {
                 receiveData[count] = 0
                 val receiveString = String(receiveData)
                 setDataText(receiveString)
+                if(mainActivity.fileSaveFlg) {
+                    saveDataText(receiveString, LocalDateTime.now())
+                }
             }
         }
 
@@ -144,6 +175,18 @@ class MainActivity : AppCompatActivity() {
             mainActivity.handler.post {
                 val dataText = mainActivity.findViewById<TextView>(R.id.textView)
                 dataText.text = text
+            }
+        }
+
+        private fun saveDataText(text: String, timeNow: LocalDateTime) {
+            val texts = text.split("\n")
+            if(texts[0].split(",").count() < 2) {
+                return
+            }
+
+            if(Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
+                val fileOutputStream = FileOutputStream(mainActivity.file, true)
+                fileOutputStream.write("${timeNow},${texts[0]}\n".toByteArray())
             }
         }
     }
